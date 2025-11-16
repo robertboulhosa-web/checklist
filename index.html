@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comprehensive Operations Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'bkg-light': '#f7f9fc',
+              'bkg-dark': '#1a1a1a',
+              'card-light': '#ffffff',
+              'card-dark': '#242424',
+              'text-light': '#1f2937',
+              'text-dark': '#e5e7eb',
+              'text-muted-light': '#6b7280',
+              'text-muted-dark': '#9ca3af',
+              'border-light': '#e5e7eb',
+              'border-dark': '#374151',
+              'primary': '#3b82f6',
+              'primary-hover': '#2563eb',
+              'secondary': '#10b981',
+              'warning': '#f59e0b',
+              'danger': '#ef4444',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Basic scrollbar styling for a more modern look */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-radius: 4px;
+      }
+      html.dark ::-webkit-scrollbar-thumb {
+        background-color: #718096;
+      }
+      body {
+        background-color: #f7f9fc;
+        color: #1f2937;
+      }
+      html.dark body {
+        background-color: #1a1a1a;
+        color: #e5e7eb;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
