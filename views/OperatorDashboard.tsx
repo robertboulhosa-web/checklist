@@ -1,11 +1,9 @@
-
-import React, { useState, useEffect } from 'react';
-import { User, Checklist, Stage, Pendency, StageStatus, TimelineEvent, Comment } from '../types';
+import React, { useState, useMemo } from 'react';
+import { User, Checklist, Pendency, StageStatus, Comment, Goal } from '../types';
 import Card from '../components/Card';
-import { CHECKLISTS, TIMELINE_EVENTS } from '../data/mockData';
+import { CHECKLISTS, TIMELINE_EVENTS, GOALS, QUEUE_ITEMS } from '../data/mockData';
 import StatusBadge from '../components/StatusBadge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ListChecks, AlertTriangle, Timer, Hourglass, SkipForward, Send, Target, CalendarClock, ChevronsRight, MessageSquare } from 'lucide-react';
+import { ListChecks, AlertTriangle, Timer, Hourglass, SkipForward, Send, Target, CalendarClock, ChevronsRight, MessageSquare, CheckCircle2 } from 'lucide-react';
 import PendencyModal from '../components/PendencyModal';
 
 interface OperatorDashboardProps {
@@ -15,35 +13,21 @@ interface OperatorDashboardProps {
 const SmartTimerCard: React.FC = () => {
     const [realTime, setRealTime] = useState(3 * 3600 + 45 * 60 + 12); // 3h 45m 12s
     const [standbyTime, setStandbyTime] = useState(1 * 3600 + 15 * 60 + 30); // 1h 15m 30s
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRealTime(prev => prev + 1);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const formatTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${h}:${m}:${s}`;
-    };
-
+    // NOTE: Timer is just illustrative. In a real app, this would be connected to checklist state.
     return (
         <Card title="Cronômetro Inteligente (Etapa Atual)" icon={<Timer />}>
             <div className="flex justify-around items-center h-full">
                 <div className="text-center">
                     <div className="flex items-center space-x-2 text-3xl font-mono text-secondary">
                         <Timer className="h-8 w-8"/>
-                        <span>{formatTime(realTime)}</span>
+                        <span>{new Date(realTime * 1000).toISOString().substr(11, 8)}</span>
                     </div>
                     <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Tempo Real</p>
                 </div>
                 <div className="text-center">
                     <div className="flex items-center space-x-2 text-3xl font-mono text-warning">
                         <Hourglass className="h-8 w-8"/>
-                        <span>{formatTime(standbyTime)}</span>
+                        <span>{new Date(standbyTime * 1000).toISOString().substr(11, 8)}</span>
                     </div>
                     <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Tempo em Standby</p>
                 </div>
@@ -52,12 +36,34 @@ const SmartTimerCard: React.FC = () => {
     );
 };
 
-
 const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ user }) => {
   const [localChecklists, setLocalChecklists] = useState(CHECKLISTS);
   const [selectedPendency, setSelectedPendency] = useState<Pendency | null>(null);
   
-  const myChecklists = localChecklists.filter(c => c.stages.some(s => s.assignedTo.id === user.id));
+  const myGoals: Goal | undefined = GOALS[user.id];
+  
+  const { myChecklists, finalReviewChecklists, isFinalReviewer } = useMemo(() => {
+    const myChecklists: Checklist[] = [];
+    const finalReviewChecklists: Checklist[] = [];
+    let isFinalReviewer = false;
+
+    localChecklists.forEach(c => {
+      const isAssigned = c.stages.some(s => s.assignedTo.id === user.id);
+      if (isAssigned) {
+        myChecklists.push(c);
+      }
+      const isReviewerForCourse = c.stages.some(s => s.id === 4 && s.assignedTo.id === user.id);
+      if (isReviewerForCourse) {
+        isFinalReviewer = true;
+        if (c.stages.every(s => s.id === 4 || s.status === StageStatus.COMPLETED)) {
+           finalReviewChecklists.push(c);
+        }
+      }
+    });
+
+    return { myChecklists, finalReviewChecklists, isFinalReviewer };
+  }, [localChecklists, user.id]);
+
   const myPendencies = myChecklists.flatMap(c => c.stages).flatMap(s => s.pendencies).filter(p => p.status === 'Aberta');
 
   const handleOpenModal = (pendency: Pendency) => {
@@ -82,13 +88,42 @@ const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ user }) => {
     }));
     setLocalChecklists(updatedChecklists);
     
-    // Also update the selectedPendency to show the new comment instantly in the modal
     setSelectedPendency(prev => prev ? { ...prev, comments: [...prev.comments, comment] } : null);
   };
 
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {isFinalReviewer && (
+           <div className="lg:col-span-3">
+             <Card title="Checklists em Revisão Final (Etapa 4)" icon={<CheckCircle2 />}>
+                <div className="space-y-4">
+                  {finalReviewChecklists.map(checklist => (
+                    <div key={checklist.id} className="p-3 bg-bkg-light dark:bg-bkg-dark rounded-lg">
+                       <h4 className="font-semibold text-lg mb-2">{checklist.courseName}</h4>
+                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          {checklist.stages.map(stage => (
+                            <div key={stage.id} className="flex items-center space-x-2">
+                              <StatusBadge status={stage.status} />
+                              <span>{stage.name}</span>
+                            </div>
+                          ))}
+                       </div>
+                       <div className="mt-3 flex justify-end">
+                          <button className="p-1.5 text-xs font-semibold text-white bg-secondary rounded hover:bg-opacity-80 transition flex items-center space-x-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Revisar e Aprovar</span>
+                          </button>
+                       </div>
+                    </div>
+                  ))}
+                  {finalReviewChecklists.length === 0 && <p className="text-text-muted-light dark:text-text-muted-dark">Nenhum checklist pronto para revisão final.</p>}
+                </div>
+             </Card>
+           </div>
+        )}
+
         {/* CARD 1 — Meus Checklists */}
         <div className="lg:col-span-3">
           <Card title="Meus Checklists (Resumo por Etapa)" icon={<ListChecks />}>
@@ -109,7 +144,7 @@ const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ user }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {checklist.stages.filter(s => s.assignedTo.id === user.id || s.status !== StageStatus.WAITING).map(stage => (
+                        {checklist.stages.filter(s => s.assignedTo.id === user.id && s.id !== 4).map(stage => (
                           <tr key={stage.id} className="border-t border-border-light dark:border-border-dark">
                             <td className="px-4 py-2 font-medium">{stage.name}</td>
                             <td className="px-4 py-2"><StatusBadge status={stage.status} /></td>
@@ -161,8 +196,12 @@ const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ user }) => {
         {/* CARD 4 — Próximos Checklists */}
         <Card title="Meus Próximos Checklists (Fila)" icon={<SkipForward />}>
             <ul className="space-y-2">
-                <li className="flex justify-between items-center p-2 rounded-md bg-bkg-light dark:bg-bkg-dark"><span>Curso de Vue.js (de Etapa 1)</span> <button className="text-xs text-primary font-semibold">Iniciar</button></li>
-                <li className="flex justify-between items-center p-2 rounded-md bg-bkg-light dark:bg-bkg-dark"><span>Curso de SQL (Liberado)</span> <button className="text-xs text-primary font-semibold">Iniciar</button></li>
+                {QUEUE_ITEMS.map(item => (
+                  <li key={item.id} className="flex justify-between items-center p-2 rounded-md bg-bkg-light dark:bg-bkg-dark">
+                    <span>{item.courseName} ({item.fromStage})</span> 
+                    <button className="text-xs text-primary font-semibold">Iniciar</button>
+                  </li>
+                ))}
             </ul>
         </Card>
 
@@ -191,30 +230,32 @@ const OperatorDashboard: React.FC<OperatorDashboardProps> = ({ user }) => {
 
         {/* CARD 8 — Minhas Metas */}
         <Card title="Minhas Metas (Mês)" icon={<Target />}>
-            <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                    <p className="text-3xl font-bold text-primary">12</p>
-                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Checklists Completos</p>
-                </div>
-                <div>
-                    <p className="text-3xl font-bold text-primary">4.5h</p>
-                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Tempo Médio</p>
-                </div>
-                <div>
-                    <p className="text-3xl font-bold text-secondary">92%</p>
-                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">SLA Batido</p>
-                </div>
-                 <div>
-                    <p className="text-3xl font-bold text-secondary">5</p>
-                    <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Cursos Finalizados</p>
-                </div>
-            </div>
+            {myGoals ? (
+              <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                      <p className="text-3xl font-bold text-primary">{myGoals.completedChecklists}</p>
+                      <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Checklists Completos</p>
+                  </div>
+                  <div>
+                      <p className="text-3xl font-bold text-primary">{myGoals.averageTime}h</p>
+                      <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Tempo Médio</p>
+                  </div>
+                  <div>
+                      <p className="text-3xl font-bold text-secondary">{myGoals.slaMetPercentage}%</p>
+                      <p className="text-sm text-text-muted-light dark:text-text-muted-dark">SLA Batido</p>
+                  </div>
+                  <div>
+                      <p className="text-3xl font-bold text-secondary">{myGoals.coursesFinished}</p>
+                      <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Cursos Finalizados</p>
+                  </div>
+              </div>
+            ) : <p className="text-text-muted-light dark:text-text-muted-dark">Metas não definidas para este usuário.</p>}
         </Card>
 
         {/* CARD 9 — Timeline do Meu Trabalho */}
         <div className="lg:col-span-2">
           <Card title="Timeline do Meu Trabalho" icon={<CalendarClock />}>
-            <div className="relative pl-4 border-l border-border-light dark:border-border-dark">
+            <div className="relative pl-4 border-l border-border-light dark:border-border-dark max-h-64 overflow-y-auto">
               {TIMELINE_EVENTS.map(event => (
                 <div key={event.id} className="mb-6">
                   <div className="absolute w-3 h-3 bg-primary rounded-full mt-1.5 -left-1.5 border border-card-light dark:border-card-dark"></div>

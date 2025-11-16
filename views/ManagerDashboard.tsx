@@ -67,8 +67,14 @@ const ManagerDashboard: React.FC<{ user: User }> = ({ user }) => {
       <div className="lg:col-span-4">
         <Card title="Relatórios" icon={<Filter />}>
           <div className="flex flex-wrap gap-4 items-center">
-            <select className="p-2 rounded-md border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark focus:outline-none focus:ring-2 focus:ring-primary"><option>Por Curso</option></select>
-            <select className="p-2 rounded-md border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark focus:outline-none focus:ring-2 focus:ring-primary"><option>Por Analista</option></select>
+            <select className="p-2 rounded-md border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark focus:outline-none focus:ring-2 focus:ring-primary">
+              <option>Todos os Cursos</option>
+              {CHECKLISTS.map(c => <option key={c.id}>{c.courseName}</option>)}
+            </select>
+            <select className="p-2 rounded-md border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark focus:outline-none focus:ring-2 focus:ring-primary">
+              <option>Todos os Analistas</option>
+              {USERS.filter(u => u.role === 'Analista Operador').map(u => <option key={u.id}>{u.name}</option>)}
+            </select>
             <input type="date" className="p-2 rounded-md border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark focus:outline-none focus:ring-2 focus:ring-primary"/>
             <div className="flex-grow"></div>
             <button className="flex items-center space-x-2 p-2 bg-secondary text-white rounded-lg hover:bg-opacity-80 transition">
@@ -124,7 +130,7 @@ const ManagerDashboard: React.FC<{ user: User }> = ({ user }) => {
                     <React.Fragment key={stage.id}>
                       <div className="flex flex-col items-center z-10">
                         {/* FIX: Use StageStatus enum for comparison instead of a magic string. */}
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${stage.status === StageStatus.COMPLETED ? 'bg-secondary' : 'bg-primary'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${stage.status === StageStatus.COMPLETED ? 'bg-secondary' : (stage.status === StageStatus.IN_PROGRESS || stage.status === StageStatus.PENDING_FIX) ? 'bg-primary' : 'bg-gray-400'}`}>
                           {stage.id}
                         </div>
                         <span className="text-xs mt-1">{stage.name}</span>
@@ -132,7 +138,7 @@ const ManagerDashboard: React.FC<{ user: User }> = ({ user }) => {
                       {index < course.stages.length - 1 && (
                         <div className="flex-grow h-1 bg-border-light dark:bg-border-dark relative -mx-1">
                           {/* FIX: Use StageStatus enum for comparison instead of a magic string. */}
-                          <div className="absolute top-0 left-0 h-1 bg-primary" style={{width: `${stage.status === StageStatus.COMPLETED ? 100 : 0}%`}}></div>
+                          <div className="absolute top-0 left-0 h-1 bg-secondary" style={{width: `${stage.status === StageStatus.COMPLETED ? 100 : 0}%`}}></div>
                         </div>
                       )}
                     </React.Fragment>

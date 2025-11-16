@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { User } from '../types';
 import Card from '../components/Card';
-import { USERS, CHECKLISTS } from '../data/mockData';
+import { USERS, CHECKLISTS, TEMPLATES, AUDIT_LOGS } from '../data/mockData';
 import { FilePlus, Users, Settings, History, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -29,9 +28,9 @@ const AdminDashboard: React.FC<{ user: User }> = ({ user }) => {
             <span>Criar Novo Template</span>
           </button>
           <ul className="space-y-2">
-            {['Template Etapa 1', 'Template Etapa 2', 'Template Etapa 3', 'Template Revisão Final'].map(template => (
-              <li key={template} className="flex justify-between items-center p-3 bg-bkg-light dark:bg-bkg-dark rounded-md">
-                <span>{template}</span>
+            {TEMPLATES.map(template => (
+              <li key={template.id} className="flex justify-between items-center p-3 bg-bkg-light dark:bg-bkg-dark rounded-md">
+                <span>{template.name}</span>
                 <div className="flex space-x-2">
                   <button className="p-1 text-blue-500 hover:text-blue-700"><Edit className="h-4 w-4" /></button>
                   <button className="p-1 text-red-500 hover:text-red-700"><Trash2 className="h-4 w-4" /></button>
@@ -98,18 +97,12 @@ const AdminDashboard: React.FC<{ user: User }> = ({ user }) => {
       <div className="lg:col-span-2">
         <Card title="Histórico e Auditoria" icon={<History />}>
           <ul className="space-y-3 max-h-80 overflow-y-auto">
-            <li className="text-sm">
-              <span className="font-semibold text-primary">Carla Dias</span> criou o template "Template Revisão Final". <span className="text-text-muted-light dark:text-text-muted-dark text-xs"> - há 2 horas</span>
-            </li>
-            <li className="text-sm">
-              <span className="font-semibold text-primary">Ana Silva</span> enviou a "Etapa 1" do curso "React Avançado". <span className="text-text-muted-light dark:text-text-muted-dark text-xs"> - há 5 horas</span>
-            </li>
-            <li className="text-sm">
-              <span className="font-semibold text-primary">Bruno Costa</span> resolveu uma pendência no curso "Node.js". <span className="text-text-muted-light dark:text-text-muted-dark text-xs"> - há 1 dia</span>
-            </li>
-             <li className="text-sm">
-              <span className="font-semibold text-primary">Carla Dias</span> atribuiu "Eduarda Lima" à Etapa 2. <span className="text-text-muted-light dark:text-text-muted-dark text-xs"> - há 2 dias</span>
-            </li>
+            {AUDIT_LOGS.map(log => (
+               <li key={log.id} className="text-sm">
+                 <span className="font-semibold text-primary">{log.user.name}</span> {log.action}
+                 <span className="text-text-muted-light dark:text-text-muted-dark text-xs"> - {log.timestamp.toLocaleString()}</span>
+               </li>
+            ))}
           </ul>
         </Card>
       </div>

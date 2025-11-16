@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserRole } from './types';
 import { USERS } from './data/mockData';
@@ -22,7 +21,7 @@ const App: React.FC = () => {
     return 'light';
   });
 
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>(UserRole.OPERATOR);
+  const [currentUserId, setCurrentUserId] = useState<string>(USERS[0].id);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -39,11 +38,11 @@ const App: React.FC = () => {
   };
   
   const currentUser = useMemo(() => {
-    return USERS.find(user => user.role === currentUserRole) || USERS[0];
-  }, [currentUserRole]);
+    return USERS.find(user => user.id === currentUserId) || USERS[0];
+  }, [currentUserId]);
 
   const renderDashboard = () => {
-    switch (currentUserRole) {
+    switch (currentUser.role) {
       case UserRole.OPERATOR:
         return <OperatorDashboard user={currentUser} />;
       case UserRole.ADMIN:
@@ -66,8 +65,9 @@ const App: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <UserRoleSwitcher
-                selectedRole={currentUserRole}
-                onRoleChange={setCurrentUserRole}
+                users={USERS}
+                selectedUserId={currentUserId}
+                onUserChange={setCurrentUserId}
               />
               <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
               <Notifications user={currentUser} />

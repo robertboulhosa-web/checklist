@@ -1,4 +1,3 @@
-
 export enum UserRole {
   OPERATOR = 'Analista Operador',
   ADMIN = 'Administrador',
@@ -69,4 +68,29 @@ export interface Notification {
   link: string;
   read: boolean;
   timestamp: Date;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+}
+
+export interface AuditLog {
+  id: string;
+  user: User;
+  action: string;
+  timestamp: Date;
+}
+
+export interface Goal {
+  completedChecklists: number;
+  averageTime: number; // in hours
+  slaMetPercentage: number;
+  coursesFinished: number;
+}
+
+export interface QueueItem {
+  id: string;
+  courseName: string;
+  fromStage: string;
 }
